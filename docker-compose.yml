@@ -4,8 +4,11 @@ services:
     build: .
     ports:
       - '5000:5000'
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     depends_on:
       - mongo
+      - redis-data-store
   mongo:
     image: mongo
     environment:
@@ -13,6 +16,11 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
     volumes:
       - express-app-mongodb:/data/db
+  redis-data-store:
+    image: redis
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: redis-server --requirepass "${REDIS_PASSWORD}"
 
 volumes:
   express-app-mongodb:

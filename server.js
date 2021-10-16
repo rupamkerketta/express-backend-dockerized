@@ -1,7 +1,6 @@
 const express = require('express')
 const app = express()
-
-const { promisify } = require('util')
+const EventEmitter = require('events')
 
 // PORT
 const PORT = process.env.PORT || 5000
@@ -13,8 +12,7 @@ const db = require('./db')
 const responseTime = require('response-time')
 
 // Middlewares
-app.use(responseTime())
-app.use(express.json())
+app.use(responseTime(), express.json())
 
 app.get('/', (req, res) => {
 	try {
@@ -25,8 +23,23 @@ app.get('/', (req, res) => {
 	}
 })
 
+// For emitting events
+const emitter = new EventEmitter()
+
 db.connect(() => {
-	app.listen(PORT, () =>
-		console.log(`[express] Server running on PORT ${PORT}`)
-	)
+	// Redis connection
+	const cacheStore = require('./cache-util')
+	cacheStore.init(emitter)
+
+	// Emitter will fire "once" - on a successful redis connection
+	emitter.once('redis-connection-success', () => {
+		// Routes
+		const rocketsRoute = require('./routes/rockets.route')
+		app.use('/api/rockets', rocketsRoute)
+
+		// Start the server
+		app.listen(PORT, () =>
+			console.log(`[express] Server running on PORT ${PORT}`)
+		)
+	})
 })

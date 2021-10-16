@@ -1,0 +1,3 @@
+### GET all rockets (test)
+
+GET http://localhost:5000/api/rockets/get-all-rockets
